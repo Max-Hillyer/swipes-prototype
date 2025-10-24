@@ -5,39 +5,58 @@ struct ContentView: View {
     @State private var likedPrograms: [Program] = []
     @AppStorage("curIndex") private var curIndex = 0
     @State private var swipeRecords: [SwipeRecord] = []
-
+    @StateObject private var locationManager = OfflineLocationManager()
+    @State private var recommendationSystem = SmartRecommendationSystem()
+    
     var body: some View {
         TabView {
             SwipeView(
                 programs: $programs, likedPrograms: $likedPrograms,
-                curIndex: $curIndex, swipeRecords: $swipeRecords
+                curIndex: $curIndex, swipeRecords: $swipeRecords,
+                locationManager: locationManager
             )
             .tabItem {
                 Image(systemName: "rectangle.stack")
                 Text("Swiper")
             }.foregroundColor(.blue)
 
-            LikedView(likedPrograms: $likedPrograms)
+            LikedView(likedPrograms: $likedPrograms, locationManager: locationManager)
                 .tabItem {
                     Image(systemName: "heart.fill")
                     Text("Liked")
                 }
-            StatView(numSwipes: curIndex, swipeRecords: swipeRecords)
+            StatView(numSwipes: curIndex, swipeRecords: swipeRecords, userProfile: recommendationSystem.userProfile)
                 .tabItem {
                     Image(systemName: "cellularbars")
                     Text("Stats")
                 }
+            
         }
         .onAppear {
             loadPrograms()
             loadLikedPrograms()
             loadSwipeRecords()
+            
+            if locationManager.authorizationStatus == .notDetermined {
+                locationManager.requestPermission()
+            }
+            
+            if locationManager.authorizationStatus == .authorizedWhenInUse ||
+                locationManager.authorizationStatus == .authorizedAlways {
+                locationManager.startTracking()
+            }
         }
         .onChange(of: likedPrograms) { _ in
             saveLikedPrograms()
         }
         .onChange(of: swipeRecords) { _ in
             saveSwipeRecords()
+        }
+        .onChange(of: locationManager.authorizationStatus) { newStatus in
+                        if newStatus == .authorizedWhenInUse ||
+                           newStatus == .authorizedAlways {
+                            locationManager.startTracking()
+                        }
         }
     }
 

@@ -3,6 +3,7 @@ import SwiftUI
 struct LikedView: View {
     @Binding var likedPrograms: [Program]
     @State private var showingClearAlert = false
+    @State var locationManager: OfflineLocationManager
     
     var body: some View {
         NavigationStack {
@@ -24,6 +25,7 @@ struct LikedView: View {
                     List {
                         ForEach(likedPrograms, id: \.name) { program in
                             CompactProgram(program: program)
+                                .environmentObject(locationManager)
                                 .swipeActions(edge: .trailing) {
                                     Button("Remove") {
                                         if let index = likedPrograms.firstIndex(where: { $0.name == program.name }) {

@@ -18,6 +18,7 @@ struct SwipeView: View {
     @State private var hasAppliedRecommendations = false
     @State private var showHelp = false
     @State private var showingClearAlert = false
+    @State var locationManager: OfflineLocationManager
 
     enum SwipeDirection {
         case none, left, right
@@ -112,13 +113,21 @@ struct SwipeView: View {
     }
 
     private var cardStackView: some View {
-        return ZStack {
-            ForEach(Array(0..<3).indices, id: \.self) { i in
-                let programIndex = curIndex + i
+        ZStack {
+            ForEach(visibleProgramIndices, id: \.self) { offset in
+                let programIndex = curIndex + offset
                 if programIndex >= 0 && programIndex < sortedPrograms.count {
-                    cardView(for: i)
+                    cardView(for: offset)
+                        .id(programIndex) // Use the actual program index as ID
                 }
             }
+        }
+    }
+
+    private var visibleProgramIndices: [Int] {
+        (0..<3).filter { offset in
+            let index = curIndex + offset
+            return index >= 0 && index < sortedPrograms.count
         }
     }
 
@@ -136,11 +145,13 @@ struct SwipeView: View {
             ProgramCardView(
                 program: sortedPrograms[programIndex],
                 isTop: isTopCard,
-                stackIndex: index,
+                stackIndex: curIndex,
                 dragOffset: isTopCard ? dragOffset : .zero,
                 swipeDirection: isTopCard ? swipeDirection : .none,
-                showingRecommended: isRecommended
+                showingRecommended: isRecommended,
+                recommendationSystem: recommendationSystem
             )
+            .environmentObject(locationManager)
             .zIndex(Double(3 - index))
             .scaleEffect(
                 isTopCard ? 1.0 : max(0.92 - Double(index) * 0.04, 0.85)

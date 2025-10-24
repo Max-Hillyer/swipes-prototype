@@ -4,6 +4,7 @@ import Charts
 struct StatView: View {
     let numSwipes: Int
     let swipeRecords: [SwipeRecord]
+    let userProfile: UserProfile
 
     private var rate: Double {
         likeRate(swipeRecords: swipeRecords)
@@ -42,7 +43,7 @@ struct StatView: View {
                         StatCard(title: "Programs Passed", value: "\(totalDislikes)", icon: "hand.thumbsdown.fill", color: .orange)
                     }
                     if #available(iOS 17 , *) {
-                        chartView(data: swipeRecords)
+                        chartView(data: swipeRecords, userProfile: userProfile)
                     }
 
                     Spacer(minLength: 20)
@@ -69,8 +70,8 @@ struct StatView: View {
         for record in likedRecords {
             let categories = record.program.category.components(separatedBy: ",")
             for category in categories {
-                let trimmed = category.trimmingCharacters(in: .whitespaces)
-                categoryCount[trimmed, default: 0] += 1
+                let normalized = userProfile.normalizeCategory(category)
+                categoryCount[normalized, default: 0] += 1
             }
         }
 
@@ -124,17 +125,15 @@ struct CategoryData: Identifiable {
     let percentage: Double
 }
 
-func getLikedCategoriesData(from swipeRecords: [SwipeRecord]) -> [CategoryData] {
+func getLikedCategoriesData(from swipeRecords: [SwipeRecord], userProfile: UserProfile) -> [CategoryData] {
     let likedRecords = swipeRecords.filter { $0.liked }
     var categoryCount: [String: Int] = [:]
 
     for record in likedRecords {
         let categories = record.program.category.components(separatedBy: ",")
         for category in categories {
-            let trimmed = category.trimmingCharacters(in: .whitespaces)
-            if !trimmed.isEmpty {
-                categoryCount[trimmed, default: 0] += 1
-            }
+            let normalized = userProfile.normalizeCategory(category)
+            categoryCount[normalized, default: 0] += 1
         }
     }
 
@@ -146,7 +145,7 @@ func getLikedCategoriesData(from swipeRecords: [SwipeRecord]) -> [CategoryData] 
 @available(iOS 17, *)
 struct chartView: View {
     let data: [SwipeRecord]
-    
+    let userProfile: UserProfile
     @State private var selectedCategory: String? = nil
     @State private var animationProgress: Double = 0.0
     @State private var showChart: Bool = false
@@ -158,10 +157,8 @@ struct chartView: View {
         for record in likedRecords {
             let categories = record.program.category.components(separatedBy: ",")
             for category in categories {
-                let trimmed = category.trimmingCharacters(in: .whitespaces)
-                if !trimmed.isEmpty {
-                    categoryCount[trimmed, default: 0] += 1
-                }
+                let normalized = userProfile.normalizeCategory(category)
+                categoryCount[normalized, default: 0] += 1
             }
         }
         

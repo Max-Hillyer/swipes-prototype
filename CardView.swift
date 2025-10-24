@@ -1,20 +1,21 @@
 import SwiftUI
 
 struct ProgramCardView: View {
-
+    @EnvironmentObject var locationManager: OfflineLocationManager
+    @State private var showingwhysheet = false
     let program: Program
     let isTop: Bool
     let stackIndex: Int
     let dragOffset: CGSize
     let swipeDirection: SwipeView.SwipeDirection
     let showingRecommended: Bool
-
+    let recommendationSystem: SmartRecommendationSystem
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             header
             categoryBadge
-            ProgramCard(program: program)
-                
+            ProgramCard(program: program, stackIndex: stackIndex)
+            
         }
         .background(
             RoundedRectangle(cornerRadius: 20)
@@ -28,9 +29,8 @@ struct ProgramCardView: View {
                 swipeDirection: swipeDirection,
                 showingRecommended: showingRecommended
             ))
-        
     }
-
+    
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
@@ -49,6 +49,7 @@ struct ProgramCardView: View {
                 }
                 .padding(.leading)
             }
+            
             Spacer()
             if showingRecommended {
                 VStack(spacing: 4) {
@@ -63,12 +64,9 @@ struct ProgramCardView: View {
                 }
                 .padding()
             }
-                
-        
-            
         }
     }
-
+    
     private var categoryBadge: some View {
         HStack {
             Text(program.category)
@@ -83,120 +81,162 @@ struct ProgramCardView: View {
         }
         .padding(.leading)
     }
-}
-struct ProgramCard: View {
-    let program: Program
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            
-            if !program.applicationDate.isEmpty {
-                DetailRow(
-                    icon: "calendar", text: program.applicationDate,
-                    color: .orange)
-            }
-            if !program.duration.isEmpty {
-                DetailRow(icon: "clock", text: program.duration, color: .blue)
-            }
-            if !program.cost.isEmpty {
-                DetailRow(
-                    icon: "dollarsign.circle", text: program.cost, color: .green
-                )
-            }
-            if !program.restrictions.isEmpty {
-                DetailRow(
-                    icon: "info.circle", text: program.restrictions,
-                    color: .secondary)
-            }
-            if !program.link.isEmpty && program.link != "No Link" {
-                Button(action: {
-                    if let url = URL(string: program.link), UIApplication.shared.canOpenURL(url) {
-                        UIApplication.shared.open(url)
-                    }
-
-                }) {
-                    HStack {
-                        Image(systemName: "safari")
-                        Text("View Details")
-                    }
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.blue)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(Color.blue.opacity(0.1))
-                    .cornerRadius(20)
-                }
-            }
-        }
-        .padding(20)
+    
+    struct ProgramCard: View {
+        @EnvironmentObject var locationManager: OfflineLocationManager
+        let program: Program
+        let stackIndex: Int
         
-    }
-}
-
-struct CardEffectsModifier: ViewModifier {
-    let isTop: Bool
-    let dragOffset: CGSize
-    let swipeDirection: SwipeView.SwipeDirection
-    let showingRecommended: Bool
-
-    func body(content: Content) -> some View {
-        let dragWidth = Double(dragOffset.width)
-        let dragAbs = abs(dragWidth)
-
-        return content
-            .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(
-                        showingRecommended ? Color.orange.opacity(0.5) : Color.clear,
-                        lineWidth: 2
-                    )
-            )
-            .scaleEffect(isTop ? CGFloat(1.0 - dragAbs / 2000.0) : 1.0)
-            .rotationEffect(.degrees(isTop ? dragWidth / 20.0 : 0))
-            .offset(
-                x: isTop ? CGFloat(dragWidth) : 0,
-                y: isTop ? CGFloat(dragOffset.height * 0.3) : 0
-            )
-            .opacity(isTop ? (1.0 - dragAbs / 500.0) : 1.0)
-            .overlay(
-                Group {
-                    if isTop && dragAbs > 50 {
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(
-                                swipeDirection == .right
-                                ? Color.green.opacity(0.3)
-                                : Color.red.opacity(0.3)
-                            )
-                            .overlay(
-                                Image(systemName: swipeDirection == .right ? "heart.fill" : "xmark")
-                                    .font(.system(size: 50, weight: .bold))
-                                    .foregroundColor(swipeDirection == .right ? .green : .red)
-                            )
+        var body: some View {
+            VStack(alignment: .leading, spacing: 20) {
+                
+                if !program.applicationDate.isEmpty {
+                    HStack {
+                        DetailRow(
+                            icon: "calendar", text: program.applicationDate,
+                            color: .orange, stackIndex: stackIndex)
+                        if stackIndex < 5{
+                            Text("Application Deadline")
+                                .padding(.leading)
+                                .font(.footnote)
+                                .foregroundColor(.gray)
+                        }
                     }
                 }
-            )
-            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: dragOffset)
+                
+                if !program.duration.isEmpty {
+                    HStack {
+                        DetailRow(icon: "clock", text: program.duration, color: .blue, stackIndex: stackIndex)
+                        if stackIndex < 5{
+                            Text("Duration")
+                                .padding(.leading)
+                                .font(.footnote)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+                if !program.cost.isEmpty {
+                    HStack {
+                        DetailRow(
+                            icon: "dollarsign.circle", text: program.cost, color: .green, stackIndex: stackIndex
+                        )
+                        if stackIndex < 5{
+                            Text("Cost")
+                                .padding(.leading)
+                                .font(.footnote)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+                if !program.restrictions.isEmpty {
+                    HStack {
+                        DetailRow(
+                            icon: "info.circle", text: program.restrictions,
+                            color: .secondary, stackIndex: stackIndex)
+                        if stackIndex < 5 {
+                            Text("Info")
+                                .padding(.leading)
+                                .font(.footnote)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                }
+                if let distanceStr = locationManager.distanceToProgramFormatted(programLat: program.latitude, programLon: program.longitude) {
+                    DetailRow(icon: "location.circle", text: distanceStr, color: .indigo, stackIndex: stackIndex)
+                }
+                //            if !program.link.isEmpty && program.link != "No Link" {
+                //                Button(action: {
+                //                    if let url = URL(string: program.link), UIApplication.shared.canOpenURL(url) {
+                //                        UIApplication.shared.open(url)
+                //                    }
+                //
+                //                })
+                //                {
+                //                    HStack {
+                //                        Image(systemName: "safari")
+                //                        Text("View Details")
+                //                    }
+                //                    .font(.subheadline)
+                //                    .fontWeight(.medium)
+                //                    .foregroundColor(.blue)
+                //                    .padding(.horizontal, 16)
+                //                    .padding(.vertical, 8)
+                //                    .background(Color.blue.opacity(0.1))
+                //                    .cornerRadius(20)
+                //                }
+                //            }
+            }
+            .padding(20)
+            
+        }
     }
-}
-
-
-
-struct DetailRow: View {
-    let icon: String
-    let text: String
-    let color: Color
-
-    var body: some View {
-        HStack(spacing: 15) {
-            Image(systemName: icon)
-                .font(.title)
-                .foregroundColor(color)
-                .frame(width: 16)
-            Text(text)
-                .font(.subheadline)
-                .foregroundColor(.primary)
-                .lineLimit(2)
+    
+    struct CardEffectsModifier: ViewModifier {
+        let isTop: Bool
+        let dragOffset: CGSize
+        let swipeDirection: SwipeView.SwipeDirection
+        let showingRecommended: Bool
+        
+        func body(content: Content) -> some View {
+            let dragWidth = Double(dragOffset.width)
+            let dragAbs = abs(dragWidth)
+            
+            return content
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(
+                            showingRecommended ? Color.orange.opacity(0.5) : Color.clear,
+                            lineWidth: 2
+                        )
+                )
+                .scaleEffect(isTop ? CGFloat(1.0 - dragAbs / 2000.0) : 1.0)
+                .rotationEffect(.degrees(isTop ? dragWidth / 20.0 : 0))
+                .offset(
+                    x: isTop ? CGFloat(dragWidth) : 0,
+                    y: isTop ? CGFloat(dragOffset.height * 0.3) : 0
+                )
+                .opacity(isTop ? (1.0 - dragAbs / 500.0) : 1.0)
+                .overlay(
+                    Group {
+                        if isTop && dragAbs > 50 {
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(
+                                    swipeDirection == .right
+                                    ? Color.green.opacity(0.3)
+                                    : Color.red.opacity(0.3)
+                                )
+                                .overlay(
+                                    Image(systemName: swipeDirection == .right ? "heart.fill" : "xmark")
+                                        .font(.system(size: 50, weight: .bold))
+                                        .foregroundColor(swipeDirection == .right ? .green : .red)
+                                )
+                        }
+                    }
+                )
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: dragOffset)
+        }
+    }
+    
+    
+    
+    struct DetailRow: View {
+        let icon: String
+        let text: String
+        let color: Color
+        let stackIndex: Int
+        
+        var body: some View {
+            HStack(spacing: 15) {
+                Image(systemName: icon)
+                    .font(.title)
+                    .foregroundColor(color)
+                    .frame(width: 16)
+                Text(text)
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 }
