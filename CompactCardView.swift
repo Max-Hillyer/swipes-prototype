@@ -3,6 +3,7 @@ import SwiftUI
 struct CompactProgram: View {
     let program: Program
     @EnvironmentObject var locationManager: OfflineLocationManager
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -50,6 +51,10 @@ struct CompactProgram: View {
             }
         }
         .padding(.vertical, 4)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.clear))
+        )
     }
 }
 

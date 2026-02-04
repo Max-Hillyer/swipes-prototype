@@ -3,35 +3,40 @@ import SwiftUI
 struct ProgramCardView: View {
     @EnvironmentObject var locationManager: OfflineLocationManager
     @State private var showingwhysheet = false
+    @Environment(\.colorScheme) private var colorScheme
     let program: Program
     let isTop: Bool
     let stackIndex: Int
     let dragOffset: CGSize
     let swipeDirection: SwipeView.SwipeDirection
-    let showingRecommended: Bool
     let recommendationSystem: SmartRecommendationSystem
+
     var body: some View {
+        let reccomendationsScore = recommendationSystem.getRecommendationScore(for: program) * 100
         VStack(alignment: .leading, spacing: 16) {
             header
             categoryBadge
-            ProgramCard(program: program, stackIndex: stackIndex)
+            ProgramCard(program: program, stackIndex: stackIndex,recommendationSystem: recommendationSystem)
             
         }
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color(.systemBackground))
-                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 4)
+                .fill(colorScheme == .dark ? Color(.secondarySystemBackground) : Color(.systemBackground))
+                .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.35 : 0.12), radius: colorScheme == .dark ? 14 : 10, x: 0, y: 6)
         )
         .modifier(
             CardEffectsModifier(
                 isTop: isTop,
                 dragOffset: dragOffset,
                 swipeDirection: swipeDirection,
-                showingRecommended: showingRecommended
+                showingRecommended: reccomendationsScore > 70,
+                showingExploration: reccomendationsScore <= 60,
+                stackIndex: stackIndex
             ))
     }
     
     private var header: some View {
+        
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(program.name)
@@ -42,30 +47,67 @@ struct ProgramCardView: View {
                 HStack {
                     Image(systemName: "map")
                         .font(.caption)
-                        .foregroundColor(.black)
+                        .foregroundColor(.secondary)
                     Text(program.location)
                         .font(.subheadline)
-                        .foregroundColor(.black)
+                        .foregroundColor(.secondary)
                 }
                 .padding(.leading)
             }
             
+            
             Spacer()
-            if showingRecommended {
+            let reccomendationsScore = recommendationSystem.getRecommendationScore(for: program) * 100
+            let whyStr = String(format: "%.0f",reccomendationsScore)
+            if reccomendationsScore > 70 {
                 VStack(spacing: 4) {
                     Image(systemName: "sparkles")
                         .font(.title2)
                         .foregroundColor(.orange)
                         .scaleEffect(1.2)
-                    Text("AI Pick")
+                    Text("Recommended")
                         .font(.caption2)
                         .fontWeight(.bold)
                         .foregroundColor(.orange)
+                    Text("\(whyStr)% Match")
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .foregroundColor(color)
+                    
+                }
+            } else if reccomendationsScore <= 60 && stackIndex >= 5 {
+                VStack(spacing: 4) {
+                    Image(systemName: "rays")
+                        .font(.title2)
+                        .foregroundColor(.purple)
+                        .scaleEffect(1.2)
+                    Text("Exploration Pick")
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.purple)
+                    Text("\(whyStr)% Match")
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.purple)
+                }
+            }
+                    var color: Color {
+                        guard let score = Int(whyStr) else {return .gray}
+                        switch score {
+                        case 0..<25:
+                            return .red
+                        case 25..<79:
+                            return .orange
+                        case 79..<101:
+                            return .green
+                        default:
+                            return .gray
+                        }
+                    }
+                    
                 }
                 .padding()
             }
-        }
-    }
     
     private var categoryBadge: some View {
         HStack {
@@ -74,7 +116,7 @@ struct ProgramCardView: View {
                 .fontWeight(.semibold)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(Color.blue.opacity(0.1))
+                .background(colorScheme == .dark ? Color.blue.opacity(0.18) : Color.blue.opacity(0.10))
                 .foregroundColor(.blue)
                 .cornerRadius(20)
             Spacer()
@@ -84,8 +126,10 @@ struct ProgramCardView: View {
     
     struct ProgramCard: View {
         @EnvironmentObject var locationManager: OfflineLocationManager
+    @Environment(\.colorScheme) private var colorScheme
         let program: Program
         let stackIndex: Int
+        let recommendationSystem: SmartRecommendationSystem
         
         var body: some View {
             VStack(alignment: .leading, spacing: 20) {
@@ -142,31 +186,23 @@ struct ProgramCardView: View {
                     }
                 }
                 if let distanceStr = locationManager.distanceToProgramFormatted(programLat: program.latitude, programLon: program.longitude) {
-                    DetailRow(icon: "location.circle", text: distanceStr, color: .indigo, stackIndex: stackIndex)
+                    HStack {
+                        DetailRow(icon: "location.circle", text: distanceStr, color: .indigo, stackIndex: stackIndex)
+                        if stackIndex < 5 {
+                            Text("Distance")
+                                .padding(.leading)
+                                .font(.footnote)
+                                .foregroundColor(.gray)
+                        }
+                    }
                 }
-                //            if !program.link.isEmpty && program.link != "No Link" {
-                //                Button(action: {
-                //                    if let url = URL(string: program.link), UIApplication.shared.canOpenURL(url) {
-                //                        UIApplication.shared.open(url)
-                //                    }
-                //
-                //                })
-                //                {
-                //                    HStack {
-                //                        Image(systemName: "safari")
-                //                        Text("View Details")
-                //                    }
-                //                    .font(.subheadline)
-                //                    .fontWeight(.medium)
-                //                    .foregroundColor(.blue)
-                //                    .padding(.horizontal, 16)
-                //                    .padding(.vertical, 8)
-                //                    .background(Color.blue.opacity(0.1))
-                //                    .cornerRadius(20)
-                //                }
-                //            }
             }
             .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(colorScheme == .dark ? Color(.tertiarySystemBackground) : Color(.secondarySystemBackground))
+                    .opacity(0.02)
+            )
             
         }
     }
@@ -176,6 +212,9 @@ struct ProgramCardView: View {
         let dragOffset: CGSize
         let swipeDirection: SwipeView.SwipeDirection
         let showingRecommended: Bool
+        let showingExploration: Bool
+        let stackIndex: Int
+    @Environment(\.colorScheme) private var colorScheme
         
         func body(content: Content) -> some View {
             let dragWidth = Double(dragOffset.width)
@@ -185,7 +224,7 @@ struct ProgramCardView: View {
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
                         .stroke(
-                            showingRecommended ? Color.orange.opacity(0.5) : Color.clear,
+                            showingRecommended ? Color.orange.opacity(0.5) : showingExploration && stackIndex > 5 ? Color.purple.opacity(0.5) : Color.clear,
                             lineWidth: 2
                         )
                 )
@@ -202,8 +241,8 @@ struct ProgramCardView: View {
                             RoundedRectangle(cornerRadius: 20)
                                 .fill(
                                     swipeDirection == .right
-                                    ? Color.green.opacity(0.3)
-                                    : Color.red.opacity(0.3)
+                                    ? Color.green.opacity(colorScheme == .dark ? 0.28 : 0.30)
+                                    : Color.red.opacity(colorScheme == .dark ? 0.28 : 0.30)
                                 )
                                 .overlay(
                                     Image(systemName: swipeDirection == .right ? "heart.fill" : "xmark")

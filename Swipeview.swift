@@ -14,7 +14,6 @@ struct SwipeView: View {
     @State private var swipeDirection: SwipeDirection = .none
     @State private var dragAmount: CGFloat = 0
     @State private var aiProgress: Double = 0
-    @State private var showingAIAnimation = false
     @State private var hasAppliedRecommendations = false
     @State private var showHelp = false
     @State private var showingClearAlert = false
@@ -41,15 +40,16 @@ struct SwipeView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showHelp.toggle() }) {
                         Image(systemName: "questionmark.circle")
-                            .foregroundColor(.brown)
+                            .foregroundColor(.green)
                             .font(.title3)
                     }
                 }
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: { showingClearAlert.toggle() }) {
                         Image(systemName: "arrow.clockwise")
-                            .foregroundColor(.brown)
+                            .foregroundColor(.red)
                             .font(.title3)
+                            
                     }
                 }
             }
@@ -139,7 +139,6 @@ struct SwipeView: View {
         }
 
         let isTopCard = index == 0
-        let isRecommended = isTopCard && showingRecommendedProgram
 
         return AnyView(
             ProgramCardView(
@@ -148,7 +147,6 @@ struct SwipeView: View {
                 stackIndex: curIndex,
                 dragOffset: isTopCard ? dragOffset : .zero,
                 swipeDirection: isTopCard ? swipeDirection : .none,
-                showingRecommended: isRecommended,
                 recommendationSystem: recommendationSystem
             )
             .environmentObject(locationManager)
@@ -297,9 +295,9 @@ struct SwipeView: View {
                 )
 
                 HelpRow(
-                    icon: "light.beacon.min.fill",
+                    icon: "rays",
                     color: .purple,
-                    title: "Diverse Programs",
+                    title: "Explore!",
                     description:
                         "We occasionally show varied options to promote discovery "
                 )
@@ -387,13 +385,6 @@ struct SwipeView: View {
         .padding(.horizontal, 40)
     }
 
-    // MARK: - Helper Functions
-    private func isProgramDiverse(_ program: Program) -> Bool {
-        let restrictions = program.restrictions.lowercased()
-        return restrictions.contains("underserved")
-            || restrictions.contains("minorities")
-    }
-
     private func initializeSortedPrograms() {
         if sortedPrograms.isEmpty {
             sortedPrograms = programs
@@ -407,9 +398,6 @@ struct SwipeView: View {
             swipeRecords.removeAll()
             likedPrograms.removeAll()
             showingRecommendedProgram = false
-            showingAIAnimation = false
-            aiProgress = 0.0
-
             recommendationSystem.resetProfile()
 
             // Clear persisted data
@@ -432,30 +420,18 @@ struct SwipeView: View {
         if curIndex >= 0 && curIndex < sortedPrograms.count {
             sortedPrograms = Array(sortedPrograms.prefix(curIndex)) + recommendedPrograms
         }
-
+        
         print(
             "Updated recommendations - \(recommendedPrograms.count) programs reordered"
         )
-
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-            showingAIAnimation = true
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            withAnimation(.easeOut(duration: 0.5)) {
-                showingAIAnimation = false
-            }
-        }
     }
 
     private func skipCurrentProgram() {
         guard curIndex < sortedPrograms.count else { return }
 
-        // Add haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
 
-        // Add swipe record
         let record = SwipeRecord(
             program: sortedPrograms[curIndex], liked: false,
             swipeOrder: swipeRecords.count)
@@ -497,22 +473,18 @@ struct SwipeView: View {
     private func updateRecommendationStatus() {
         guard curIndex < sortedPrograms.count else {
             showingRecommendedProgram = false
-            showingAIAnimation = false
             return
         }
 
         showingRecommendedProgram = swipeRecords.count >= 5 && curIndex % 3 == 0
-        showingAIAnimation = showingRecommendedProgram
     }
 
     private func checkForRecommendation() {
-        if swipeRecords.count >= 5 && (swipeRecords.count - 5) % 3 == 0 {
+        if swipeRecords.count >= 5 && (swipeRecords.count - 5) % 6 == 0 {
             updateRecommendations()
         }
     }
 }
-
-// MARK: - Helper Views
 
 struct HelpRow: View {
     let icon: String

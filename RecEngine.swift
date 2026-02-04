@@ -94,7 +94,7 @@ struct UserProfile: Codable {
          **/
         let likedRecords = records.filter { $0.liked }
         let dislikedRecords = records.filter { !$0.liked }
-        let skipWeight = 2.0
+        let skipWeight = 1.5
         
         updateCategoryPreferences(
             liked: likedRecords, disliked: dislikedRecords,
@@ -251,7 +251,7 @@ struct UserProfile: Codable {
             if total > 0 {
                 let rawScore = Double(counts.likes) / Double(total)
                 let confidence =
-                    min(Double(locationConfidence[location] ?? 1), 5, 0) / 5.0
+                    min(Double(locationConfidence[location] ?? 1), 5.0) / 5.0
                 preferredLocations[location] = applyConfidenceScaling(
                     rawScore: Double(rawScore), confidence: confidence)
             }
@@ -471,122 +471,124 @@ struct UserProfile: Codable {
 
 extension UserProfile {
     private static let categoryGroups: [String : String] = [
+        // STEM - Engineering & CS
         "Engineering": "STEM - Engineering & CS",
-                "CS": "STEM - Engineering & CS",
-                "AI": "STEM - Engineering & CS",
-                "Robotics": "STEM - Engineering & CS",
-                "Computer Science": "STEM - Engineering & CS",
-                "Data Science": "STEM - Engineering & CS",
-                "Machine Learning": "STEM - Engineering & CS",
-                "EECS": "STEM - Engineering & CS",
-                "ME": "STEM - Engineering & CS",
-                "Mechanical": "STEM - Engineering & CS",
-                "Data": "STEM - Engineering & CS",
-                "Computational Biology": "STEM - Engineering & CS",
-                "Bioinformatics": "STEM - Engineering & CS",
-                "Cloud Computing": "STEM - Engineering & CS",
-                
-                // STEM - Life Sciences
-                "Biology": "STEM - Life Sciences",
-                "Biomedical": "STEM - Life Sciences",
-                "Molecular Bio": "STEM - Life Sciences",
-                "Biochemistry": "STEM - Life Sciences",
-                "Genomics": "STEM - Life Sciences",
-                "Polymer Research": "STEM - Life Sciences",
-                
-                // STEM - Physical Sciences
-                "Physics": "STEM - Physical Sciences",
-                "Chemistry": "STEM - Physical Sciences",
-                "Astrophysics": "STEM - Physical Sciences",
-                "Radar Systems": "STEM - Physical Sciences",
-                "Earth Sciences": "STEM - Physical Sciences",
-                "Astronomy": "STEM - Physical Sciences",
-                "Space research": "STEM - Physical Sciences",
-                "Earth": "STEM - Physical Sciences",
-                
-                // STEM - General (when "All STEM" or "Multiple STEM" is listed)
-                "All STEM categories": "STEM - General",
-                "Multiple STEM": "STEM - General",
-                "STEM Research": "STEM - General",
-                "STEM": "STEM - General",
-                "Natural Sciences": "STEM - General",
-                "Natural Science Research": "STEM - General",
-                
-                // Medicine & Health
-                "Medicine": "Medicine & Health",
-                "Public Health": "Medicine & Health",
-                "Healthcare": "Medicine & Health",
-                "Nursing": "Medicine & Health",
-                "Sports Medicine": "Medicine & Health",
-                "Veterinary Medicine": "Medicine & Health",
-                "Neuroscience": "Medicine & Health",
-                
-                // Environmental
-                "Environmental Science": "Environmental",
-                "Environmental Studies": "Environmental",
-                "Ecology": "Environmental",
-                "Sustainability": "Environmental",
-                "Oceanography": "Environmental",
-                "Conservation": "Environmental",
-                
-                // Mathematics
-                "Mathematics": "Mathematics",
-                
-                // Business & Economics
-                "Business": "Business & Economics",
-                "Economics": "Business & Economics",
-                "Entrepreneurship": "Business & Economics",
-                "Tech": "Business & Economics",
-                "Finance": "Business & Economics",
-                "Marketing": "Business & Economics",
-                "Sports Analytics": "Business & Economics",
-                "Statistics": "Business & Economics",
-                
-                // Humanities & Social Sciences
-                "Humanities": "Humanities & Social Sciences",
-                "Multiple Humanities": "Humanities & Social Sciences",
-                "History": "Humanities & Social Sciences",
-                "Philosophy": "Humanities & Social Sciences",
-                "Literature": "Humanities & Social Sciences",
-                "Ethnic Studies": "Humanities & Social Sciences",
-                "Psychology": "Humanities & Social Sciences",
-                "Sociology": "Humanities & Social Sciences",
-                "Political Science": "Humanities & Social Sciences",
-                "Leadership": "Humanities & Social Sciences",
-                "Global Issues": "Humanities & Social Sciences",
-                
-                // Writing & Journalism
-                "Creative Writing": "Writing & Journalism",
-                "Writing": "Writing & Journalism",
-                "Journalism": "Writing & Journalism",
-                "Novel Writing": "Writing & Journalism",
-                "TV Writing": "Writing & Journalism",
-                "Dramatic Writing": "Writing & Journalism",
-                
-                // Design & Architecture
-                "Architecture": "Design & Architecture",
-                "Design": "Design & Architecture",
-                "Game Design": "Design & Architecture",
-                
-                // Visual & Performing Arts
-                "Art": "Visual & Performing Arts",
-                "Visual Arts": "Visual & Performing Arts",
-                "Performing Arts": "Visual & Performing Arts",
-                "Music": "Visual & Performing Arts",
-                "Theater": "Visual & Performing Arts",
-                "Film": "Visual & Performing Arts",
-                "Film & Video": "Visual & Performing Arts",
-                "Photography": "Visual & Performing Arts",
-                
-                // Special Programs
-                "Modeling": "Special Programs",
-                "probability": "Special Programs",
-                "game theory": "Special Programs",
-                "cognitive science": "Special Programs",
-                "quantitative reasoning": "Special Programs",
-                "Paleontology": "Special Programs",
-                "Every Major": "Special Programs"
-            ]
+        "CS": "STEM - Engineering & CS",
+        "AI": "STEM - Engineering & CS",
+        "Robotics": "STEM - Engineering & CS",
+        "Computer Science": "STEM - Engineering & CS",
+        "Data Science": "STEM - Engineering & CS",
+        "Machine Learning": "STEM - Engineering & CS",
+        "EECS": "STEM - Engineering & CS",
+        "ME": "STEM - Engineering & CS",
+        "Mechanical": "STEM - Engineering & CS",
+        "Data": "STEM - Engineering & CS",
+        "Computational Biology": "STEM - Engineering & CS",
+        "Bioinformatics": "STEM - Engineering & CS",
+        "Cloud Computing": "STEM - Engineering & CS",
+        "Engineering (broad overview)": "STEM - Engineering & CS",
+        
+        // STEM - Life Sciences
+        "Biology": "STEM - Life Sciences",
+        "Biomedical": "STEM - Life Sciences",
+        "Molecular Bio": "STEM - Life Sciences",
+        "Biochemistry": "STEM - Life Sciences",
+        "Genomics": "STEM - Life Sciences",
+        "Polymer Research": "STEM - Life Sciences",
+        
+        // STEM - Physical Sciences
+        "Physics": "STEM - Physical Sciences",
+        "Chemistry": "STEM - Physical Sciences",
+        "Astrophysics": "STEM - Physical Sciences",
+        "Radar Systems": "STEM - Physical Sciences",
+        "Earth Sciences": "STEM - Physical Sciences",
+        "Astronomy": "STEM - Physical Sciences",
+        "Space research": "STEM - Physical Sciences",
+        "Earth": "STEM - Physical Sciences",
+        
+        // STEM - General
+        "All STEM categories": "STEM - General",
+        "All STEM": "STEM - General",
+        "Multiple STEM": "STEM - General",
+        "STEM Research": "STEM - General",
+        "STEM": "STEM - General",
+        "Natural Sciences": "STEM - General",
+        "Natural Science Research": "STEM - General",
+        "Multiple research": "STEM - General",
+        "Earth / Space research": "STEM - General",
+        
+        // Medicine & Health
+        "Medicine": "Medicine & Health",
+        "Public Health": "Medicine & Health",
+        "Healthcare": "Medicine & Health",
+        "Nursing": "Medicine & Health",
+        "Sports Medicine": "Medicine & Health",
+        "Veterinary Medicine": "Medicine & Health",
+        "Neuroscience": "Medicine & Health",
+        "cognitive science": "Medicine & Health",
+        
+        // Environmental
+        "Environmental Science": "Environmental",
+        "Environmental Studies": "Environmental",
+        "Ecology": "Environmental",
+        "Sustainability": "Environmental",
+        "Oceanography": "Environmental",
+        "Conservation": "Environmental",
+        
+        // Mathematics
+        "Mathematics": "Mathematics",
+        
+        // Business & Economics
+        "Business": "Business & Economics",
+        "Economics": "Business & Economics",
+        "Entrepreneurship": "Business & Economics",
+        "Tech": "Business & Economics",
+        "Finance": "Business & Economics",
+        "Marketing": "Business & Economics",
+        "Sports Analytics": "Business & Economics",
+        "Statistics": "Business & Economics",
+        
+        // Humanities & Social Sciences
+        "Humanities": "Humanities & Social Sciences",
+        "Multiple Humanities": "Humanities & Social Sciences",
+        "History": "Humanities & Social Sciences",
+        "Philosophy": "Humanities & Social Sciences",
+        "Literature": "Humanities & Social Sciences",
+        "Ethnic Studies": "Humanities & Social Sciences",
+        "Psychology": "Humanities & Social Sciences",
+        "Sociology": "Humanities & Social Sciences",
+        "Political Science": "Humanities & Social Sciences",
+        "Leadership": "Humanities & Social Sciences",
+        "Global Issues": "Humanities & Social Sciences",
+        
+        // Writing & Journalism
+        "Creative Writing": "Writing & Journalism",
+        "Writing": "Writing & Journalism",
+        "Journalism": "Writing & Journalism",
+        "Novel Writing": "Writing & Journalism",
+        "TV Writing": "Writing & Journalism",
+        "Dramatic Writing": "Writing & Journalism",
+        
+        // Design & Architecture
+        "Architecture": "Design & Architecture",
+        "Design": "Design & Architecture",
+        "Game Design": "Design & Architecture",
+        
+        // Visual & Performing Arts
+        "Art": "Visual & Performing Arts",
+        "Visual Arts": "Visual & Performing Arts",
+        "Performing Arts": "Visual & Performing Arts",
+        "Music": "Visual & Performing Arts",
+        "Theater": "Visual & Performing Arts",
+        "Film": "Visual & Performing Arts",
+        "Film & Video": "Visual & Performing Arts",
+        "Photography": "Visual & Performing Arts",
+    
+        
+        "Applied Science & Engineering / Biological & Biomedical": "STEM - General",
+        "Bioengineering / Molecular Bio / Sports Medicine": "STEM - Life Sciences",
+        "Multiple (Bioengineering / Molecular Bio / Sports Medicine)": "STEM - Life Sciences"
+    ]
     func normalizeCategory(_ category: String) -> String {
         let trimmed = category.trimmingCharacters(in: .whitespaces)
         return Self.categoryGroups[trimmed] ?? trimmed
@@ -636,14 +638,13 @@ class SmartRecommendationSystem: ObservableObject {
         var score = 0.0
         var totalWeight = 0.0
         
-        // Existing weights (reduce slightly to accommodate distance)
-        let categoryWeight = 0.55  // reduced from 0.60
-        let locationWeight = 0.13  // reduced from 0.15
-        let durationWeight = 0.09  // reduced from 0.10
-        let costWeight = 0.13      // reduced from 0.15
-        let selectivityWeight = 0.08  // reduced from 0.10
-        let restrictionsWeight = 0.04 // reduced from 0.05
-        let distanceWeight = 0.08  // new weight
+        let categoryWeight = 0.55
+        let locationWeight = 0.08
+        let durationWeight = 0.09
+        let costWeight = 0.13
+        let selectivityWeight = 0.08
+        let restrictionsWeight = 0.04
+        let distanceWeight = 0.13
         
         // Calculate all scores
         let categoryScore = calculateCategoryScore(program.category)

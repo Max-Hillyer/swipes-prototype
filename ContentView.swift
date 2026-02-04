@@ -7,44 +7,67 @@ struct ContentView: View {
     @State private var swipeRecords: [SwipeRecord] = []
     @StateObject private var locationManager = OfflineLocationManager()
     @State private var recommendationSystem = SmartRecommendationSystem()
+    @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
+    @State private var showWelcomePopup = false
+    @State private var selectedTab = 0
     
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             SwipeView(
                 programs: $programs, likedPrograms: $likedPrograms,
                 curIndex: $curIndex, swipeRecords: $swipeRecords,
                 locationManager: locationManager
             )
             .tabItem {
-                Image(systemName: "rectangle.stack")
+                Image(systemName: "hand.point.up.left.and.text.fill")
                 Text("Swiper")
-            }.foregroundColor(.blue)
+            }
+            .tag(0)
 
             LikedView(likedPrograms: $likedPrograms, locationManager: locationManager)
                 .tabItem {
                     Image(systemName: "heart.fill")
                     Text("Liked")
                 }
+                .tag(1)
+                
             StatView(numSwipes: curIndex, swipeRecords: swipeRecords, userProfile: recommendationSystem.userProfile)
                 .tabItem {
                     Image(systemName: "cellularbars")
                     Text("Stats")
                 }
+                .tag(2)
             
         }
         .onAppear {
-            loadPrograms()
-            loadLikedPrograms()
-            loadSwipeRecords()
+            let tabBarAppearance = UITabBarAppearance()
+            tabBarAppearance.configureWithDefaultBackground()
             
-            if locationManager.authorizationStatus == .notDetermined {
-                locationManager.requestPermission()
-            }
+            // Swiper tab - Blue
+            let swiperItemAppearance = UITabBarItemAppearance()
+            swiperItemAppearance.selected.iconColor = .systemBlue
+            swiperItemAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor.systemBlue]
             
-            if locationManager.authorizationStatus == .authorizedWhenInUse ||
-                locationManager.authorizationStatus == .authorizedAlways {
-                locationManager.startTracking()
-            }
+            // Liked tab - Pink
+            let likedItemAppearance = UITabBarItemAppearance()
+            likedItemAppearance.selected.iconColor = .systemPink
+            likedItemAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor.systemPink]
+            
+            // Stats tab - Purple
+            let statsItemAppearance = UITabBarItemAppearance()
+            statsItemAppearance.selected.iconColor = .systemPurple
+            statsItemAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor.systemPurple]
+            
+            UITabBar.appearance().standardAppearance = tabBarAppearance
+            UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+        }
+        .accentColor(selectedTab == 0 ? .blue : selectedTab == 1 ? .pink : .purple)
+
+        .onAppear {
+            setupOnAppear()
+        }
+        .sheet(isPresented: $showWelcomePopup) {
+            WelcomeView(hasSeenWelcome: $hasSeenWelcome, showPopup: $showWelcomePopup)
         }
         .onChange(of: likedPrograms) { _ in
             saveLikedPrograms()
@@ -53,13 +76,45 @@ struct ContentView: View {
             saveSwipeRecords()
         }
         .onChange(of: locationManager.authorizationStatus) { newStatus in
-                        if newStatus == .authorizedWhenInUse ||
-                           newStatus == .authorizedAlways {
-                            locationManager.startTracking()
-                        }
+            // Only start tracking if authorized, stop if denied/restricted
+            switch newStatus {
+            case .authorizedWhenInUse, .authorizedAlways:
+                locationManager.startTracking()
+            case .denied, .restricted:
+                locationManager.stopTracking()
+            case .notDetermined:
+                break
+            @unknown default:
+                break
+            }
         }
     }
-
+    
+    private func setupOnAppear() {
+        if !hasSeenWelcome {
+            showWelcomePopup = true
+        }
+        loadPrograms()
+        loadLikedPrograms()
+        loadSwipeRecords()
+        
+        // Handle location permissions
+        switch locationManager.authorizationStatus {
+        case .notDetermined:
+            // Just request permission, don't start tracking
+            // The onChange handler will start tracking if user approves
+            locationManager.requestPermission()
+        case .authorizedWhenInUse, .authorizedAlways:
+            // Already authorized, safe to start tracking
+            locationManager.startTracking()
+        case .denied, .restricted:
+            // User has denied, don't do anything
+            print("🚫 Location access denied or restricted")
+        @unknown default:
+            break
+        }
+    }
+    
     private func loadPrograms() {
         do {
             programs = try parseCSVData().shuffled()

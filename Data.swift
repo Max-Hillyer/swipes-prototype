@@ -15,8 +15,8 @@ struct Program: Codable, Equatable, Identifiable {
     let latitude: Double
     let longitude: Double
     let likeSkip: Bool
+    var isDiverse: Bool
     
-    // Computed property for coordinates (CLLocationCoordinate2D isn't Codable)
     var coordinates: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
@@ -25,7 +25,7 @@ struct Program: Codable, Equatable, Identifiable {
     init(link: String, name: String, location: String, category: String,
          selectivity: String, applicationDate: String, duration: String,
          restrictions: String, cost: String, latitude: Double, longitude: Double,
-         likeSkip: Bool, id: UUID = UUID()) {
+         likeSkip: Bool, isDiverse: Bool, id: UUID = UUID()) {
         self.id = id
         self.link = link
         self.name = name
@@ -39,6 +39,7 @@ struct Program: Codable, Equatable, Identifiable {
         self.latitude = latitude
         self.longitude = longitude
         self.likeSkip = likeSkip
+        self.isDiverse = isDiverse
     }
 }
 func parseCSVData() -> [Program] {
@@ -64,10 +65,8 @@ func parseCSVData() -> [Program] {
    http://med.stanford.edu/genecamp/process.html,Genomics Research Internship Program (GRIP),Stanford,"Genomics, CS",N/A,March 2,8 weeks,16+ / Bay Area HS,Free,37.4275,-122.1697
    https://research.princeton.edu/about-us/internships/laboratory-learning-program,Laboratory Learning Program,Princeton,Engineering + Natural Science Research,N/A,March 15,5 - 6 weeks,16 +,Free (Room & Board N/A),40.3430,-74.6514
    https://www.ll.mit.edu/outreach/llrise,Lincoln Laboratory Radar Introduction for Student Engineers (LLRISE),MIT,Radar Systems,N/A,,2 weeks,Rising senior,Free (Room & Board included),42.3601,-71.0942
-   No Link,The Science and Engineering Apprenticeship Program (SEAP),Multiple US Navy + Dept. of Defense Labs,STEM,250,Nov 1,8 weeks,9+,$3500 stipend No Housing,38.9072,-77.0369
    http://www.tsgc.utexas.edu/sees-internship/,Stem Enhancement in Earth Science (SEES),NASA @ UT Austin,Earth / Space research,11% (45/500),February 22,2 weeks,Rising junior / senior,FREE: Tuition + Room & Board,30.2849,-97.7341
-   https://www.stonybrook.edu/simons/,Simons Summer Research Program,Stony Brook University,Multiple STEM,8%,January 22,5 weeks,Rising senior,$3200 Residential,40.9124,-73.1234
-   https://summerscience.org,Summer Science Program (SSP),Multiple,"Astrophysics, Biochemistry",10%,February 28,5 weeks,Rising seniors,Heavy Financial Aid,34.4208,-119.6982
+   https://www.stonybrook.edu/simons/,Simons Summer Research Program,Stony Brook University,STEM,8%,January 22,5 weeks,Rising senior,$3200 Residential,40.9124,-73.1234
    https://www.cpet.ufl.edu/students/summer-programs/student-science-training-program/,Student Science Training Program (SSTP),"U Florida, Gainesville, FL",Multiple research,accepts 90 students,Dec - Feb (rolling) March 1 (priority),7 weeks,Rising senior,$4800 (including housing),29.6436,-82.3549
    http://simr.stanford.edu,Stanford Institutes of Medicine Summer Research Program (SIMR),"Stanford, CA",Biomedical (multiple research labs),accepts 50 students,February 23,8 weeks,juniors / seniors,$500 minimum stipend,37.4275,-122.1697
    https://www.cee.org/apply-rsi,Research Science Institute (RSI),MIT,STEM,accepts 80 students,January 15,7 weeks,Rising seniors,Cost-Free (includes residential),42.3601,-71.0942
@@ -95,17 +94,15 @@ func parseCSVData() -> [Program] {
    https://universitycollege.tufts.edu/high-school/programs/tufts-summer-research-experience,Tufts Summer Research Experience,Tufts U,Multiple STEM,N/A,12/1 - 5/1 open​Rolling,6 weeks,Rising junior / senior,"$11,250 (tuition + residential)",42.4085,-71.1183
    https://www.umass.edu/summer/programs/research-intensive-labs,UMass Research Intensive Labs,"Amherst, MA","Biology, Biochemistry, Astronomy, Psychology",N/A,Confirm w/ website,6 weeks,Rising 10 - 12,"$10,185 (includes 6 academic credits)",42.3868,-72.5301
    https://www.nyu.edu/admissions/high-school-programs/nyu-gstem.html,NYU GSTEM,NYU,Computer Science,N/A,EA March 15​Regular April 15,6 weeks,Rising 12 (prefers girls/minorities),$4500 tuition ​Housing available,40.7295,-73.9965
-   https://bluestampengineering.com,Bluestamp Engineering,"Multiple (Palo Alto, SF, NYC)","Engineering, Robotics, CS",N/A,Rolling,6 weeks (flexible),High school (including rising 9th),"$4,200 (commuter only)",37.4419,-122.1430
    https://sce.cornell.edu/precollege/program/engineering,Cornell Engineering Experience,Cornell,Engineering (broad overview),N/A,Rolling,6 weeks,Juniors / Seniors,"$13,500 (tuition + residential)",42.4534,-76.4735
    https://esap.seas.upenn.edu/apply/,Engineering Summer Academy at Penn (ESAP),UPenn,Engineering,N/A,March 1 (priority)​April 5 (regular),3 weeks,"Rising 10th, 11th, 12th","$7,690",39.9522,-75.1932
-   https://ei.jhu.edu/about-ei/what-is-ei/,Johns Hopkins Engineering Innovation (EI),Multiple (Johns Hopkins),Engineering,,Rolling,4-5 weeks,Rising junior / senior (will consider 9th/10th),"$7,500 (tuition + residential)",39.3299,-76.6205
+   https://ei.jhu.edu/about-ei/what-is-ei/,Johns Hopkins Engineering Innovation (EI),Johns Hopkins,Engineering,,Rolling,4-5 weeks,Rising junior / senior (will consider 9th/10th),"$7,500 (tuition + residential)",39.3299,-76.6205
    https://www.cmu.edu/pre-college/academic-programs/computational-biology.html,CMU Computational Biology,Carnegie Mellon U,Computational biology,N/A,March 1 (priority)March 15 (regular)​rolling,3 weeks,Varies,"$6,099",40.4433,-79.9436
    https://jkcp.com/program/penn-medicine-summer-program-for-high-school-students/,Penn Medicine Summer Program,UPenn,Medicine,N/A,March 4,4 weeks,Rising juniors / seniors,"$8,495 (tuition + residential)",39.9522,-75.1932
    https://summer.uchicago.edu/programs/stones-and-bones,U Chicago Stones & Bones,U Chicago / fieldwork,Paleontology,N/A,January 22 (priority)February 26 (regular),4 weeks,9 - 12,"$11,900",41.7886,-87.5987
    http://med.stanford.edu/psychiatry/special-initiatives/CNIX.html,Clinical Neuroscience Immersion Experience      (CNI-X),Stanford,Neuroscience,N/A,Rolling,1 or 2 week sessions,9 - 12,$1295 (1 week)$2500 (2 week),37.4275,-122.1697
-   https://www.fremontstem.org/asdrp,Aspiring Scholars Directed Research Program (ASDRP),"Fremont, CA",STEM (multiple),N/A,,6/13 - 8/23,Rising 9 - 12,$850 (commute),37.5485,-121.9886
+   https://www.fremontstem.org/asdrp,Aspiring Scholars Directed Research Program (ASDRP),"Fremont, CA",Multiple STEM,N/A,,6/13 - 8/23,Rising 9 - 12,$850 (commute),37.5485,-121.9886
    https://engineering.nyu.edu/research-innovation/k12-stem-education/tandon-summer-programs/machine-learning,NYU Machine Learning,NYU,Machine Learning,N/A,Priority Feb 28 Regular March 14,2 weeks,9 - 12,$2000 tuition + $1000~ residential,40.7295,-73.9965
-   https://www.tellurideassociation.org/our-programs/high-school-students/summer-program-juniors-tasp/,TASP (Telluride Association Summer Program) ,Multiple (Cornell / U Maryland / U Michigan,Humanities,Extreme (sample application pdf),January 13,6 weeks,Rising 12,Free,42.4534,-76.4735
    https://summerhumanities.spcs.stanford.edu,Stanford Humanities Institute (SHI) ,Stanford U,Multiple Humanities,Difficult,January 29 EAFebruary 26 RD,3 weeks,Rising 11 - 12,"$7,100",37.4275,-122.1697
    https://globalscholars.yale.edu/our-program,YYGS (Yale Young Global Scholars),Yale U,Multiple,Difficult (6500 applications),November 12 EA​January 15 RD,2 weeks,Rising 10 - 12      (16 minimum),$6300,41.3163,-72.9223
    https://www.tellurideassociation.org/our-programs/high-school-students/sophomore-seminar-tass/,TASS (Telluride Association Sophomore Seminar),"Cornell, U Mich",Ethnic Studies,Difficult (56 max) * application pdf,January 6,6 weeks,Current 10,Free,42.4534,-76.4735
@@ -133,16 +130,14 @@ func parseCSVData() -> [Program] {
    https://globalyouth.wharton.upenn.edu/summer-high-school-programs/leadership-in-the-business-world/,Leadership in the Business World - LBW,UPenn,Entrepeneurship ​Business,160 (2 sections),Priority: January 22​,1 month,Rising 11 - 12,$8495,39.9522,-75.1932
    https://fisher.wharton.upenn.edu/management-technology-summer-institute/,Management & Technology Summer Institute,UPenn,Entrepreneurship​Tech,50 - 75 annually,February 1,3 weeks,Rising 12 +exceptional Rising 11,$7500,39.9522,-75.1932
    https://www.babson.edu/admission/visiting-student-programs/babson-summer-study/,Babson Summer Study,"Babson College (Boston, MA)",Entrepreneurship,Moderate,March 9,4 weeks,Rising 11 - 12,$8750,42.2999,-71.2662
-   https://www.stern.nyu.edu/programs-admissions/undergraduate/high-school-summer-program,Summer @ Stern,NYU,,Moderate,March 2 Part 1March 20 Part 2,6 weeks,Rising 11 -12,Confirm w/ website,40.7295,-73.9965
+   https://www.stern.nyu.edu/programs-admissions/undergraduate/high-school-summer-program,Summer @ Stern,NYU,Business,Moderate,March 2 Part 1March 20 Part 2,6 weeks,Rising 11 -12,Confirm w/ website,40.7295,-73.9965
    https://haas.berkeley.edu/business-academy/high-school-entrepreneurship/,B-BAY​High School Entrepreneurship,UC Berkeley Haas,Entrepreneurship,50 annually,RollingApril 15 Final,2 weeks,High School,$5700,37.8719,-122.2585
    https://summer.uchicago.edu/course/pathways-leadership-and-entrepreneurship,Pathways in Leadership & Entrepreneurship,U Chicago,Entrepreneurship,Easy - Moderate,Priority Jan 22Regular Feb 26Extended April 1Rolling post 4/1,3 weeks,High School,$7100,41.7886,-87.5987
    https://sce.cornell.edu/precollege/program/business-world,The Business World,Cornell,Business / Economics / Entrepreneurship,Moderate,May 1 ​Rolling,3 weeks,10 - 12,$6710,42.4534,-76.4735
    https://www.mccombs.utexas.edu/BBA/Academics/Summer-High-School-Programs,McCombs Summer High School Programs,UT Austin,Business / Entrepreneurship,Moderate,January 31 PriorityApril 1 Regular,1 week,Rising 11 - 12,Free,30.2849,-97.7341
    https://wsb.wharton.upenn.edu/students/moneyball-academy/,Wharton Moneyball Academy,UPenn,Sports Analytics ​Statistics,Easy - Moderate,Priority January 22,3 weeks,Rising 10 - 12,Confirm w/ website,39.9522,-75.1932
    https://artofproblemsolving.com/wiki/index.php/Mathematical_Olympiad_Summer_Program,Mathematical Olympiad Summer Program​ MOP ,Carnegie Mellon U,Mathematics,,USAMO,3 weeks,Top 12 finishers on USAMO,Free,40.4433,-79.9436
-   https://www.mathcamp.org,Mathcamp ,"Burlington, VT",March 12,,,,13 - 18,$4500,44.4759,-73.2121
    http://www.math.unl.edu/programs/agam,All Girls / All Math,U Nebraska,Mathematics,,March 2,1 week,Rising 10 - 12​30 accepted annual,2 tier pricing: ​1) $1000 2) ​$500,40.8202,-96.7005
-   https://www.awesomemath.org,AwesomeMath,Multiple US campuses,Mathematics,,,3 weeks,,,40.4433,-79.9436
    https://hcssim.org,The Hampshire College Summer Studies in MathematicsHCSSiM,Hampshire College,Mathematics,,Rolling,6 weeks,High School,$4193 residential + tuition,42.3255,-72.6732
    https://www.txstate.edu/mathworks/camps/Summer-Math-Camps-Information/hsmc/Honors-Summer-Math-Camp-Information-.html,Honors Summer Math Camp (HSMC),"Texas State ​(San Marcos, TX)",Mathematics,,Rolling​: Round 1 Feb 15 Round 2 March 15 Round 3 April 15,6 weeks,Rising 10 - 12 ​(20% accepted),$4800,29.8883,-97.9403
    http://www.mathily.org,MathILY,Bryn Mawr,Mathematics,,Rolling until April 28,5 weeks,High School,$4800,40.0189,-75.3143
@@ -157,7 +152,6 @@ func parseCSVData() -> [Program] {
    https://www.cmu.edu/pre-college/academic-programs/game-academy.html,National High School Game Academy (NHSGA),Carnegie Mellon U,Game Design,,Rolling,6 weeks,16+,$9668 tuition + residential,40.4433,-79.9436
    https://tisch.nyu.edu/special-programs/high-school-programs/game-design,Tisch Summer High School Game Design,NYU,Game Design,,January (confirm w/ website),4 weeks,Rising juniors / seniors,$12113 residential + tuition,40.7295,-73.9965
    https://cosmos.ucsc.edu/clusters/c5.html,Video Game Design @ COSMOS,UCSC,Game Design,,February 7,4 weeks,High School,"$4,128 residential + tuition",36.9914,-122.0583
-   https://www.idtech.com/id-game-dev-academy,Game Dev Academy (ID Tech Camp),Multiple,Game Design,,Rolling,2 weeks,High School,Confirm w/ website,37.7749,-122.4194
    https://vetsites.tufts.edu/avm/,Adventures in Veterinary Medicine,Tufts U,Veterinary Medicine,,,2 weeks (2 sections),Rising 10 - 12,$3850 (residential + tuition),42.4085,-71.1183
    https://sce.cornell.edu/precollege/program#,Veterinary Medicine (Conservation + Small Animals),Cornell U,Veterinary Medicine,,May 1 (Rolling),3 weeks,Juniors / Seniors,"$6,750 (residential + tuition)",42.4534,-76.4735
    https://vet.uga.edu/education/k-12-programs/vetcamp/,VetCAMP (Veterinary Career Aptitude and Mentoring Program),U of Georgia,Veterinary Medicine,,January 24,1 week,10 - 12,$900 (residential / tuition),33.9519,-83.3576
@@ -168,7 +162,6 @@ func parseCSVData() -> [Program] {
    https://sites.uci.edu/ncis/,Nursing Camp in Summer (NCIS),UC Irvine,Nursing,,Rolling,1 week,Rising 11 - 12,$2000,33.6405,-117.8443
    https://precollege.adelphi.edu/programs/nursing/,Introduction to Nursing,Adelphi U,Nursing,,,2 weeks,10 - 12,$1800,40.7262,-73.5107
    https://summer.georgetown.edu/programs/SHS26/nursing-academy,Nursing Academy,Georgetown U,Nursing,,Rolling,1 week,Rising 10 - 12,$3025,38.9076,-77.0723
-   https://www.thesca.org/serve/youth-programs,Student Conservation Association (SCA),Multiple,Environmental Science,,March (confirm w/ website),Confirm w/ website,15 - 19,Free,38.9072,-77.0369
    https://precollege.brown.edu/bell-alaska/,Brown Environmental Leadership Lab (BELL),"Anchorage, AK",Environmental Science,,February 25Rolling,2 weeks,Rising 10 - 12Ages ​15 - 18,$5984,61.2181,-149.9003
    http://summer.sewanee.edu/high-school-students/fieldstudy/,Sewanee Environmental Institute,Sewanee U of the South,Environmental Science,,Rolling,2 weeks,Rising 11 - 12,$1900,35.2037,-85.9218
    https://www.somas.stonybrook.edu/education/undergrad_course_mar104/,Oceanography @ Stony Brook Southampton,Stony Brook Southampton,Environmental Science,,Rolling,2 weeks,High School ​16+,$3000 tuition + ​$800 housing,40.8844,-72.3897
@@ -190,7 +183,7 @@ func parseCSVData() -> [Program] {
    https://www.mica.edu/non-degree-learning-opportunities/programs-for-youth/programs-for-teens/summer-pre-college-program/,MICA Pre-College Art & Design,"Maryland Institute College of Art (Baltimore, MD)",Art,,Nov 1 - April 30Rolling,2 - 5 weeks,High School,2 weeks $2850 3 weeks $4110 ​5 weeks $6400,39.3113,-76.6150
    https://samfoxschool.wustl.edu/summer/portplus,Portfolio Plus @ WashU,Wash U St. Louis,Art,,,3 weeks,Confirm w/ website,$5327 (tuition + residential),38.6488,-90.3108
    https://precollege.risd.edu,RISD Pre-College,"RISD (Providence, RI)",Art,,Rolling,6 weeks,High School,Tuition $6641Residential $2925,41.8268,-71.4098
-   https://sfai.edu/public-youth-education/precollege/application,San Francisco Art Institute Pre-College,San Francisco Art Institute,JArt,,anuary 4 Rolling​April 1 Priority​May 1 Final,4 weeks,Rising junior / senior,Confirm w/ website,37.8024,-122.4173
+   https://sfai.edu/public-youth-education/precollege/application,San Francisco Art Institute Pre-College,San Francisco Art Institute,Art,,January 4 Rolling​April 1 Priority​May 1 Final,4 weeks,Rising junior / senior,Confirm w/ website,37.8024,-122.4173
    https://www.scad.edu/academics/pre-college-summer-programs/scad-rising-star,SCAD Rising Star,Savannah ​Atlanta,Art,,May 15 Priority,5 weeks,Rising senior,$6300 (tuition + residential)​,32.0809,-81.0912
    https://www.summer.ucla.edu/institutes/Art,UCLA Art Summer Institute,UCLA,Art,,February 15 Rolling,2 weeks~,14 - 17,$2200~ tuition$1440 residential,34.0689,-118.4452
    https://www.otis.edu/summer-art,Summer of Art,"Otis College of Art & Design, Los Angeles",Art,,March 13 (Priority / Scholarship),4 weeks,15+,$3750 (tuition + residential),34.0558,-118.3949
@@ -239,7 +232,8 @@ func parseCSVData() -> [Program] {
                 cost: components[8],
                 latitude: latitude,
                 longitude: longitude,
-                likeSkip: false
+                likeSkip: false,
+                isDiverse: false
             )
             programs.append(program)
         }

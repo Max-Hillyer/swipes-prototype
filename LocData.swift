@@ -16,11 +16,6 @@ class OfflineLocationManager: NSObject, ObservableObject {
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.distanceFilter = kCLDistanceFilterNone
         authorizationStatus = locationManager.authorizationStatus
-        
-    #if DEBUG
-    // Default location for previews
-    currentLocation = CLLocation(latitude: 39.94064779930916, longitude: -75.15276066459604)
-    #endif
     }
     
     func requestPermission() {
@@ -28,21 +23,47 @@ class OfflineLocationManager: NSObject, ObservableObject {
     }
     
     func startTracking() {
+        // Explicitly check for denied/restricted first
+        if authorizationStatus == .denied || authorizationStatus == .restricted {
+            print("🚫 Location tracking explicitly denied or restricted")
+            isTracking = false
+            stopTracking() // Make sure we're stopped
+            return
+        }
+        
         guard authorizationStatus == .authorizedWhenInUse ||
               authorizationStatus == .authorizedAlways else {
+            print("🚫 Location tracking not authorized")
+            isTracking = false
             return
         }
         
         locationManager.startUpdatingLocation()
         isTracking = true
+        print("📍 Location tracking started")
     }
     
     func stopTracking() {
+        // Force stop regardless of state
+        print("🛑 FORCE STOPPING location tracking")
         locationManager.stopUpdatingLocation()
+        locationManager.stopMonitoringSignificantLocationChanges()
         isTracking = false
     }
     
     func requestSingleLocation() {
+        // Explicitly check for denied/restricted first
+        if authorizationStatus == .denied || authorizationStatus == .restricted {
+            print("🚫 Cannot request location - permission explicitly denied or restricted")
+            return
+        }
+        
+        guard authorizationStatus == .authorizedWhenInUse ||
+              authorizationStatus == .authorizedAlways else {
+            print("🚫 Cannot request location - permission not granted")
+            return
+        }
+        
         print("📍 Requesting single location fix")
         locationManager.requestLocation()
     }
@@ -78,15 +99,23 @@ class OfflineLocationManager: NSObject, ObservableObject {
 
 extension OfflineLocationManager: CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        // Reject updates if not authorized
+        let status = manager.authorizationStatus
+        guard status == .authorizedWhenInUse || status == .authorizedAlways else {
+            print("🚫 Rejecting location update - not authorized (status: \(status.rawValue))")
+            return
+        }
+        
         guard let location = locations.last, location.horizontalAccuracy > 0 else { return }
         
         Task { @MainActor in
             self.currentLocation = location
+            print("📍 Location updated: \(location.coordinate.latitude), \(location.coordinate.longitude)")
         }
     }
     
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Location error: \(error)")
+        print("❌ Location error: \(error)")
     }
     
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
@@ -94,6 +123,17 @@ extension OfflineLocationManager: CLLocationManagerDelegate {
         
         Task { @MainActor in
             self.authorizationStatus = status
+            
+            // Immediately and aggressively stop tracking if permission is denied or restricted
+            if status == .denied || status == .restricted {
+                print("🚫 Location permission denied/restricted - FORCE STOPPING all tracking")
+                self.isTracking = false
+                self.stopTracking()
+            } else if status == .authorizedWhenInUse || status == .authorizedAlways {
+                print("✅ Location permission granted")
+            } else if status == .notDetermined {
+                print("❓ Location permission not yet determined")
+            }
         }
     }
 }

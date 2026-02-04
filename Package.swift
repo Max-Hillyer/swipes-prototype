@@ -16,11 +16,11 @@ let package = Package(
         .iOSApplication(
             name: "Swipes",
             targets: ["AppModule"],
-            bundleIdentifier: "com..ProgramSwiper",
+            bundleIdentifier: "com.maxhillyer.swipes",
             teamIdentifier: "JTZN622UZU",
             displayVersion: "1.0",
             bundleVersion: "1",
-            appIcon: .asset("AppIcon"),
+            appIcon: .placeholder(icon: .openBook),
             accentColor: .presetColor(.brown),
             supportedDeviceFamilies: [
                 .pad,
@@ -31,6 +31,9 @@ let package = Package(
                 .landscapeRight,
                 .landscapeLeft,
                 .portraitUpsideDown(.when(deviceFamilies: [.pad]))
+            ],
+            capabilities: [
+                .locationWhenInUse(purposeString: "Used to measure distance between you and a given summer program")
             ]
         )
     ],
