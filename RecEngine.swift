@@ -16,6 +16,16 @@ struct SwipeRecord: Codable, Equatable {
     }
 }
 
+/// A single human-readable reason why a program was recommended (for "Recommended because" UI).
+struct RecommendationReason: Identifiable {
+    let id = UUID()
+    let title: String
+    let detail: String?
+    let icon: String
+    /// Contribution to the overall score (used for ordering); higher = more important.
+    let impact: Double
+}
+
 struct UserProfile: Codable {
     var preferredCategories: [String: Double] = [:]
     var preferredLocations: [String: Double] = [:]
@@ -679,8 +689,82 @@ class SmartRecommendationSystem: ObservableObject {
         
         return score / totalWeight
     }
-    
-    
+
+    /// Returns the top reasons this program was recommended (for "Recommended because" UI).
+    /// Only includes factors that contributed positively (score > 0.55). Empty if no swipes yet.
+    func getRecommendationReasons(for program: Program) -> [RecommendationReason] {
+        guard userProfile.totalSwipes > 0 else { return [] }
+
+        let categoryWeight = 0.55
+        let locationWeight = 0.08
+        let durationWeight = 0.09
+        let costWeight = 0.20
+        let distanceWeight = 0.13
+
+        var reasons: [RecommendationReason] = []
+
+        let categoryScore = calculateCategoryScore(program.category)
+        if categoryScore > 0.55 {
+            let matchedGroups = program.category.components(separatedBy: ",")
+                .map { userProfile.normalizeCategory($0.trimmingCharacters(in: .whitespaces)) }
+                .filter { userProfile.preferredCategories[$0] != nil }
+            let detail = matchedGroups.isEmpty ? nil : matchedGroups.prefix(2).joined(separator: ", ")
+            reasons.append(RecommendationReason(
+                title: "Matches your interests",
+                detail: detail,
+                icon: "star.fill",
+                impact: (categoryScore - 0.5) * categoryWeight
+            ))
+        }
+
+        let locationScore = userProfile.preferredLocations[program.location] ?? 0.5
+        if locationScore > 0.55 {
+            reasons.append(RecommendationReason(
+                title: "You've liked programs in this area",
+                detail: program.location,
+                icon: "mappin.circle.fill",
+                impact: (locationScore - 0.5) * locationWeight
+            ))
+        }
+
+        let durationScore = userProfile.preferredDuration[program.duration] ?? 0.5
+        if durationScore > 0.55 {
+            reasons.append(RecommendationReason(
+                title: "Similar length to programs you liked",
+                detail: program.duration,
+                icon: "clock.fill",
+                impact: (durationScore - 0.5) * durationWeight
+            ))
+        }
+
+        let costKey = userProfile.normalizeCost(program.cost)
+        let costScore = userProfile.preferredCost[costKey] ?? 0.5
+        if costScore > 0.55 {
+            let costLabel = costKey == "free" ? "Free" : (costKey == "low" ? "Low cost" : (costKey == "medium" ? "Medium cost" : (costKey == "high" ? "Higher cost" : nil)))
+            reasons.append(RecommendationReason(
+                title: "You've liked programs with a similar price",
+                detail: program.cost,
+                icon: "dollarsign.circle.fill",
+                impact: (costScore - 0.5) * costWeight
+            ))
+        }
+
+        let distanceScore = calculateDistanceScore(for: program)
+        if distanceScore > 0.55, userLocation != nil {
+            let programLocation = CLLocation(latitude: program.latitude, longitude: program.longitude)
+            let distance = userLocation!.distance(from: programLocation)
+            let distanceLabel = distance < 50_000 ? "Close to you" : (distance < 200_000 ? "Regional" : (distance < 500_000 ? "National" : "Distant"))
+            reasons.append(RecommendationReason(
+                title: "Within your preferred distance",
+                detail: distanceLabel,
+                icon: "location.circle.fill",
+                impact: (distanceScore - 0.5) * distanceWeight
+            ))
+        }
+
+        return Array(reasons.sorted { $0.impact > $1.impact }.prefix(4))
+    }
+
     private func calculateDistanceScore(for program: Program) -> Double {
         guard let userLocation = userLocation else { return 0.5 }
         

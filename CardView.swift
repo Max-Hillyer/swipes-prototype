@@ -33,6 +33,12 @@ struct ProgramCardView: View {
                 showingExploration: reccomendationsScore <= 60,
                 stackIndex: stackIndex
             ))
+        .sheet(isPresented: $showingwhysheet) {
+            RecommendationReasonsSheet(
+                programName: program.name,
+                reasons: recommendationSystem.getRecommendationReasons(for: program)
+            )
+        }
     }
     
     private var header: some View {
@@ -59,22 +65,31 @@ struct ProgramCardView: View {
             Spacer()
             let reccomendationsScore = recommendationSystem.getRecommendationScore(for: program) * 100
             let whyStr = String(format: "%.0f",reccomendationsScore)
+            let recommendationReasons = recommendationSystem.getRecommendationReasons(for: program)
             if reccomendationsScore > 70 {
-                VStack(spacing: 4) {
-                    Image(systemName: "sparkles")
-                        .font(.title2)
-                        .foregroundColor(.orange)
-                        .scaleEffect(1.2)
-                    Text("Recommended")
-                        .font(.caption2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.orange)
-                    Text("\(whyStr)% Match")
-                        .font(.subheadline)
-                        .fontWeight(.bold)
-                        .foregroundColor(color)
-                    
+                Button(action: { showingwhysheet = true }) {
+                    VStack(spacing: 4) {
+                        Image(systemName: "sparkles")
+                            .font(.title2)
+                            .foregroundColor(.orange)
+                            .scaleEffect(1.2)
+                        Text("Recommended")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.orange)
+                        Text("\(whyStr)% Match")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .foregroundColor(color)
+                        if !recommendationReasons.isEmpty {
+                            Text("Tap to see why")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
+                .buttonStyle(.plain)
+                .disabled(recommendationReasons.isEmpty)
             } else if reccomendationsScore <= 60 && stackIndex >= 5 {
                 VStack(spacing: 4) {
                     Image(systemName: "rays")
@@ -275,6 +290,60 @@ struct ProgramCardView: View {
                     .foregroundColor(.primary)
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
+
+// MARK: - Recommended because sheet
+struct RecommendationReasonsSheet: View {
+    let programName: String
+    let reasons: [RecommendationReason]
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if reasons.isEmpty {
+                    Text("No specific reasons yet — keep swiping to personalize recommendations.")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                } else {
+                    List {
+                        Section {
+                            ForEach(reasons) { reason in
+                                HStack(alignment: .top, spacing: 12) {
+                                    Image(systemName: reason.icon)
+                                        .font(.title3)
+                                        .foregroundColor(.orange)
+                                        .frame(width: 28, alignment: .center)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(reason.title)
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                        if let detail = reason.detail, !detail.isEmpty {
+                                            Text(detail)
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        }
+                                    }
+                                    Spacer(minLength: 0)
+                                }
+                                .padding(.vertical, 4)
+                            }
+                        }
+                    }
+                    .listStyle(.insetGrouped)
+                }
+            }
+            .navigationTitle("Recommended because")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
             }
         }
     }
